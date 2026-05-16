@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const axios = require("axios");
+const mongoose = require("mongoose");
 require("dotenv").config();
 
 const app = express();
@@ -9,70 +10,81 @@ app.use(cors());
 app.use(express.json());
 
 /* =========================================================
-   CONFIG PAYPAL
+   CONEXIÓN A MONGODB
+========================================================= */
+
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB conectado"))
+  .catch(err => console.error("❌ Error MongoDB:", err));
+
+/* =========================================================
+   MODELO DE PRODUCTO
+========================================================= */
+
+const ProductoSchema = new mongoose.Schema({
+  nombre: String,
+  precio: Number,
+  precioAnterior: Number,
+  descripcion: String,
+  imagen: String,
+  categoria: String
+});
+
+const Producto = mongoose.model("Producto", ProductoSchema);
+
+/* =========================================================
+   PAYPAL CONFIG
 ========================================================= */
 
 const PAYPAL_API = "https://api-m.sandbox.paypal.com";
 
 /* =========================================================
-   OBTENER ACCESS TOKEN
+   ACCESS TOKEN
 ========================================================= */
 
 async function generarAccessToken() {
-  try {
-    const clientId = process.env.PAYPAL_CLIENT_ID?.trim();
-    const secret = process.env.PAYPAL_CLIENT_SECRET?.trim();
+  const clientId = process.env.PAYPAL_CLIENT_ID?.trim();
+  const secret = process.env.PAYPAL_CLIENT_SECRET?.trim();
 
-    const auth = Buffer.from(`${clientId}:${secret}`).toString("base64");
+  const auth = Buffer.from(`${clientId}:${secret}`).toString("base64");
 
-    const params = new URLSearchParams();
-    params.append("grant_type", "client_credentials");
+  const params = new URLSearchParams();
+  params.append("grant_type", "client_credentials");
 
-    const response = await axios.post(
-      "https://api-m.sandbox.paypal.com/v1/oauth2/token",
-      params,
-      {
-        headers: {
-          Authorization: `Basic ${auth}`,
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
-        timeout: 15000
+  const response = await axios.post(
+    "https://api-m.sandbox.paypal.com/v1/oauth2/token",
+    params,
+    {
+      headers: {
+        Authorization: `Basic ${auth}`,
+        "Content-Type": "application/x-www-form-urlencoded"
       }
-    );
+    }
+  );
 
-    return response.data.access_token;
-
-  } catch (error) {
-    console.error("❌ ERROR GENERANDO ACCESS TOKEN:");
-    console.error(error.response?.status);
-    console.error(error.response?.data || error.message);
-    throw error;
-  }
+  return response.data.access_token;
 }
 
 /* =========================================================
-   CREAR ORDEN
+   PRODUCTOS (NUEVO)
+========================================================= */
+
+// GET productos desde BD
+app.get("/api/productos", async (req, res) => {
+  const productos = await Producto.find();
+  res.json(productos);
+});
+
+/* =========================================================
+   PAYPAL ORDERS
 ========================================================= */
 
 app.post("/api/orders", async (req, res) => {
-
   try {
-
     const { cart } = req.body;
 
-    if (!cart || cart.length === 0) {
-      return res.status(400).json({
-        error: "Carrito vacío"
-      });
-    }
-
-    // Total calculado en servidor
-    const subtotal = cart.reduce((acc, item) => {
-      return acc + (item.precio * item.cantidad);
-    }, 0);
-
+    const subtotal = cart.reduce((acc, item) => acc + item.precio * item.cantidad, 0);
     const envio = 10;
-
     const total = subtotal + envio;
 
     const accessToken = await generarAccessToken();
@@ -81,7 +93,6 @@ app.post("/api/orders", async (req, res) => {
       `${PAYPAL_API}/v2/checkout/orders`,
       {
         intent: "CAPTURE",
-
         purchase_units: [
           {
             amount: {
@@ -95,28 +106,16 @@ app.post("/api/orders", async (req, res) => {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json"
-        },
-        timeout: 15000
+        }
       }
     );
 
-    res.json({
-      id: response.data.id
-    });
+    res.json({ id: response.data.id });
 
   } catch (error) {
-
-    console.error(
-      "ERROR CREANDO ORDEN:",
-      error.response?.data || error.message
-    );
-
-    res.status(500).json({
-      error: "Error creando la orden"
-    });
-
+    console.error("ERROR CREANDO ORDEN:", error.response?.data || error.message);
+    res.status(500).json({ error: "Error creando orden" });
   }
-
 });
 
 /* =========================================================
@@ -124,9 +123,7 @@ app.post("/api/orders", async (req, res) => {
 ========================================================= */
 
 app.post("/api/orders/:orderID/capture", async (req, res) => {
-
   try {
-
     const { orderID } = req.params;
 
     const accessToken = await generarAccessToken();
@@ -138,26 +135,16 @@ app.post("/api/orders/:orderID/capture", async (req, res) => {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json"
-        },
-        timeout: 15000
+        }
       }
     );
 
     res.json(response.data);
 
   } catch (error) {
-
-    console.error(
-      "ERROR CAPTURANDO PAGO:",
-      error.response?.data || error.message
-    );
-
-    res.status(500).json({
-      error: "Error capturando pago"
-    });
-
+    console.error("ERROR CAPTURANDO:", error.response?.data || error.message);
+    res.status(500).json({ error: "Error capturando pago" });
   }
-
 });
 
 /* =========================================================
