@@ -1,28 +1,31 @@
-const Producto = require("../models/producto");
+const fs = require("fs");
+const path = require("path");
+
+const rutaProductos = path.join(
+  __dirname,
+  "../data/productos.json"
+);
 
 const obtenerProductos = async (req, res) => {
 
   try {
 
-    const productos = await Producto.find({
-      activo: true
-    });
+    const data = fs.readFileSync(
+      rutaProductos,
+      "utf8"
+    );
 
-    const productosFormateados =
-      productos.map(producto => ({
-        id: producto._id,
-        nombre: producto.nombre,
-        precio: producto.precio,
-        precioAnterior: producto.precioAnterior,
-        descripcion: producto.descripcion,
-        imagen: producto.imagen,
-        categoria: producto.categoria,
-        stock: producto.stock
-      }));
+    const productos = JSON.parse(data);
 
-    res.json(productosFormateados);
+    const activos = productos.filter(
+      p => p.activo
+    );
+
+    res.json(activos);
 
   } catch (error) {
+
+    console.error(error);
 
     res.status(500).json({
       error: "Error obteniendo productos"
@@ -36,13 +39,31 @@ const crearProducto = async (req, res) => {
 
   try {
 
-    const producto = new Producto(req.body);
+    const data = fs.readFileSync(
+      rutaProductos,
+      "utf8"
+    );
 
-    await producto.save();
+    const productos = JSON.parse(data);
 
-    res.status(201).json(producto);
+    const nuevoProducto = {
+      id: Date.now().toString(),
+      ...req.body,
+      activo: true
+    };
+
+    productos.push(nuevoProducto);
+
+    fs.writeFileSync(
+      rutaProductos,
+      JSON.stringify(productos, null, 2)
+    );
+
+    res.status(201).json(nuevoProducto);
 
   } catch (error) {
+
+    console.error(error);
 
     res.status(500).json({
       error: "Error creando producto"
@@ -56,8 +77,3 @@ module.exports = {
   obtenerProductos,
   crearProducto
 };
-const productos = await Producto.find();
-
-console.log(productos);
-
-res.json(productos);

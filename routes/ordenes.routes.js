@@ -1,20 +1,33 @@
 const express = require("express");
 
+const fs = require("fs");
+
+const path = require("path");
+
 const router = express.Router();
 
-const Orden = require("../models/orden");
+const rutaOrdenes = path.join(
+  __dirname,
+  "../data/ordenes.json"
+);
 
-// OBTENER ÓRDENES
+// OBTENER ORDENES
 router.get("/", async (req, res) => {
 
   try {
 
-    const ordenes = await Orden.find()
-      .sort({ createdAt: -1 });
+    const data = fs.readFileSync(
+      rutaOrdenes,
+      "utf8"
+    );
+
+    const ordenes = JSON.parse(data);
 
     res.json(ordenes);
 
   } catch (error) {
+
+    console.error(error);
 
     res.status(500).json({
       error: "Error obteniendo órdenes"
@@ -29,15 +42,35 @@ router.post("/", async (req, res) => {
 
   try {
 
-    const orden = new Orden(req.body);
+    const data = fs.readFileSync(
+      rutaOrdenes,
+      "utf8"
+    );
 
-    await orden.save();
+    const ordenes = JSON.parse(data);
+
+    const nuevaOrden = {
+      id: Date.now().toString(),
+      estado: "pagado",
+      createdAt: new Date(),
+      ...req.body
+    };
+
+    ordenes.push(nuevaOrden);
+
+    fs.writeFileSync(
+      rutaOrdenes,
+      JSON.stringify(ordenes, null, 2)
+    );
 
     res.json({
-      ok: true
+      ok: true,
+      orden: nuevaOrden
     });
 
   } catch (error) {
+
+    console.error(error);
 
     res.status(500).json({
       error: "Error guardando orden"

@@ -1,0 +1,24 @@
+[
+  {
+    "id": "1",
+    "nombre": "Leche en Polvo",
+    "precio": 12,
+    "precioAnterior": 15,
+    "descripcion": "Leche importada de alta calidad",
+    "imagen": "https://via.placeholder.com/300",
+    "categoria": "lacteos",
+    "stock": 20,
+    "activo": true
+  },
+  {
+    "id": "2",
+    "nombre": "Arroz Premium",
+    "precio": 8,
+    "precioAnterior": 10,
+    "descripcion": "Arroz de excelente calidad",
+    "imagen": "https://via.placeholder.com/300",
+    "categoria": "abarrotes",
+    "stock": 50,
+    "activo": true
+  }
+]
