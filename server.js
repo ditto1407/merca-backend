@@ -9,11 +9,6 @@ const productosRoutes =
 
 const app = express();
 
-const ordenesRoutes =
-  require("./routes/ordenes.routes");
-
-app.use("/api/ordenes", ordenesRoutes);
-
 conectarDB();
 
 app.use(cors());
@@ -27,4 +22,3 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Servidor en puerto ${PORT}`);
 });
-
