@@ -71,8 +71,21 @@ async function generarAccessToken() {
 
 // GET productos desde BD
 app.get("/api/productos", async (req, res) => {
+
   const productos = await Producto.find();
-  res.json(productos);
+
+  const productosFormateados = productos.map(producto => ({
+    id: producto._id,
+    nombre: producto.nombre,
+    precio: producto.precio,
+    precioAnterior: producto.precioAnterior,
+    descripcion: producto.descripcion,
+    imagen: producto.imagen,
+    categoria: producto.categoria
+  }));
+
+  res.json(productosFormateados);
+
 });
 
 /* =========================================================
