@@ -56,3 +56,8 @@ module.exports = {
   obtenerProductos,
   crearProducto
 };
+const productos = await Producto.find();
+
+console.log(productos);
+
+res.json(productos);
