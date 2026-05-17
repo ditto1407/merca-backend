@@ -2,7 +2,7 @@ const express = require("express");
 
 const router = express.Router();
 
-const Orden = require("../models/orden");
+const Orden = require("../models/tempo");
 
 // OBTENER ÓRDENES
 router.get("/", async (req, res) => {
