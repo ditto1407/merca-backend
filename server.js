@@ -13,6 +13,15 @@ const ordenesRoutes =
 const app = express();
 
 conectarDB();
+mongoose.connection.once("open", async () => {
+  console.log("DB:", mongoose.connection.name);
+
+  const collections = await mongoose.connection.db
+    .listCollections()
+    .toArray();
+
+  console.log(collections);
+});
 
 app.use(cors());
 
