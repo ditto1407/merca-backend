@@ -9,8 +9,8 @@ const productosRoutes =
 
 const app = express();
 
-const ordenesRoutes =
-  require("./routes/ordenes.routes");
+//const ordenesRoutes =
+  //require("./routes/ordenes.routes");
 
 
 
@@ -21,7 +21,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api/productos", productosRoutes);
-app.use("/api/ordenes", ordenesRoutes);
+//app.use("/api/ordenes", ordenesRoutes);
 
 const PORT = process.env.PORT || 3000;
 
